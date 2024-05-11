@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+  }
+  h2 {
+    color: #333;
+  }
+  #monthlyAmount {
+    font-size: 20px;
+    color: #333;
+    margin-top: 20px;
+  }
+  #expenses {
+    margin: 20px auto;
+    width: 80%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  #expenses th, #expenses td {
+    border: 1px solid #ddd;
+    padding: 12px;
+  }
+  #expenses th {
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
+    color: white;
+    border-bottom: 2px solid #4CAF50;
+    text-align: left;
+  }
+  #expenses tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  #monthlyAmount {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  #monthlyAmount label {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+   #monthlyPocketMoney {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 250px;
+  }
+  #monthlyPocketMoney::placeholder {
+    color: #999;
+  }
+  #monthlyPocketMoney:focus {
+    outline: none;
+    border-color: #45a049;
+  }
+  button {
+    margin: 10px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  button:hover {
+    background: linear-gradient(to bottom, #45a049, #4CAF50);
+  }
+  #totalAmount {
+    font-size: 24px;
+    color: #333;
+    margin-top: 20px;
+  }
+  #remainingBalance {
+    font-size: 20px;
+    color: #333;
+    margin-top: 20px;
+  }
+  #confirmButton {
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  #confirmButton:hover {
+    background: linear-gradient(to bottom, #45a049, #4CAF50);
+  }
+</style>
+</head>
+<body>
+<h1>Expense Tracker</h1>
+<h2>Enter Your Monthly Pocket Money</h2>
+<div id="monthlyAmount">
+  <input type="number" id="monthlyPocketMoney" placeholder="Enter Monthly Pocket Money (₹)">
+  <button id="confirmButton" onclick="savePocketMoney()">Confirm</button>
+</div>
+<table id="expenses">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Description</th>
+      <th>Amount (₹)</th>
+    </tr>
+  </thead>
+  <tbody id="expenseList"></tbody>
+</table>
+<button onclick="addItem()">Add Item</button>
+<button onclick="clearAll()">Clear All</button>
+<p id="totalAmount">Total Expenses: ₹<span></span></p>
+
+<p id="remainingBalance">Remaining Balance: ₹ <span>0</span></p>
+
+<script>
+function updateMonthlyAmount() {
+  const monthlyPocketMoney = parseFloat(document.getElementById("monthlyPocketMoney").value);
+  localStorage.setItem("monthlyPocketMoney", monthlyPocketMoney);
+}
+
+function savePocketMoney() {
+  const monthlyPocketMoney = parseFloat(document.getElementById("monthlyPocketMoney").value);
+  if (!isNaN(monthlyPocketMoney)) {
+    localStorage.setItem("monthlyPocketMoney", monthlyPocketMoney);
+    alert("Monthly pocket money saved successfully!");
+  } else {
+    alert("Please enter a valid amount.");
+  }
+}
+
+function addItem() {
+  const date = new Date().toLocaleDateString();
+  const description = prompt("Enter expense description:");
+  const amount = parseFloat(prompt("Enter expense amount:"));
+  
+  if (description && !isNaN(amount)) {
+    const expense = { date, description, amount };
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+    expenses.push(expense);
+    localStorage.setItem("expenses", JSON.stringify(expenses));
+    displayExpenses();
+  } else {
+    alert("Invalid input! Please try again.");
+  }
+}
+
+function clearAll() {
+  localStorage.removeItem("expenses");
+  localStorage.removeItem("payments");
+  localStorage.removeItem("monthlyPocketMoney");
+  displayExpenses();
+  displayPayments();
+  document.getElementById("remainingBalance").textContent = "Remaining Balance: ₹0.00";
+  document.getElementById("monthlyPocketMoney").value = "";
+}
+
+function displayExpenses() {
+  const expenseList = document.getElementById("expenseList");
+  expenseList.innerHTML = "";
+  const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+  
+  expenses.forEach((expense, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${expense.date}</td>
+      <td>${expense.description}</td>
+      <td>₹${expense.amount.toFixed(2)}</td>
+    `;
+    expenseList.appendChild(row);
+    // Add different color for alternate rows
+    if (index % 2 !== 0) {
+      row.style.backgroundColor = "#f9f9f9";
+    }
+  });
+
+  // Calculate and display total amount
+  const totalAmount = expenses.reduce((total, expense) => total + expense.amount, 0);
+  document.querySelector("#totalAmount span").textContent = totalAmount.toFixed(2);
+
+  // Update remaining balance
+  updateRemainingBalance(totalAmount);
+}
+
+function recordPayment() {
+  const paymentAmount = parseFloat(document.getElementById("paymentAmount").value);
+  if (!isNaN(paymentAmount)) {
+    let payments = JSON.parse(localStorage.getItem("payments")) || [];
+    payments.push(paymentAmount);
+    localStorage.setItem("payments", JSON.stringify(payments));
+    displayPayments();
+  } else {
+    alert("Invalid input! Please enter a valid payment amount.");
+  }
+}
+
+function displayPayments() {
+  const paymentSection = document.getElementById("paySection");
+  paymentSection.innerHTML = "";
+  const payments = JSON.parse(localStorage.getItem("payments")) || [];
+  
+  payments.forEach(payment => {
+    const paymentElement = document.createElement("div");
+    paymentElement.textContent = `Paid: ₹${payment.toFixed(2)}`;
+    paymentSection.appendChild(paymentElement);
+  });
+
+  // Calculate and display remaining balance
+  const totalAmount = parseFloat(document.querySelector("#totalAmount span").textContent);
+  const paidAmount = payments.reduce((total, payment) => total + payment, 0);
+  const remainingBalance = totalAmount - paidAmount;
+  document.getElementById("remainingBalance").textContent = `Remaining Balance: ₹${remainingBalance.toFixed(2)}`;
+}
+
+function updateRemainingBalance(totalAmount) {
+  const monthlyPocketMoney = parseFloat(localStorage.getItem("monthlyPocketMoney"));
+  if (!isNaN(monthlyPocketMoney)) {
+    const paidAmount = JSON.parse(localStorage.getItem("payments"))?.reduce((total, payment) => total + payment, 0) || 0;
+    const remainingBalance = monthlyPocketMoney - totalAmount + paidAmount;
+    document.getElementById("remainingBalance").textContent = `Remaining Balance: ₹${remainingBalance.toFixed(2)}`;
+  }
+}
+
+// Display expenses and payments on page load
+displayExpenses();
+displayPayments();
+
+// Populate monthly pocket money input if previously set
+const monthlyPocketMoney = parseFloat(localStorage.getItem("monthlyPocketMoney"));
+if (!isNaN(monthlyPocketMoney)) {
+  document.getElementById("monthlyPocketMoney").value = monthlyPocketMoney;
+  updateRemainingBalance(0); // Calculate remaining balance if monthly pocket money is set
+}
+</script>
+</body>
+</html>
